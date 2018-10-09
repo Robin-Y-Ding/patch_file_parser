@@ -169,6 +169,8 @@ void patch::hk_gen_line_num(hunk &hk)
 	int ins_offset = 0;
 	int del_offset = 0;
 	int ins_line_num = 0;
+	int del_size = 0;
+	int ins_size = 0;
 	int del_line_num = 0;
 	for (int i = 0; i < hk.diff_code.size(); i++)
 	{
@@ -177,12 +179,14 @@ void patch::hk_gen_line_num(hunk &hk)
 			del_line_num = hk.del_line[0] + del_offset;
 			hk.deletion_lines.push_back(del_line_num);
 			del_offset++;
+                        del_size++;
 		}
 		else if (hk.diff_code[i][0] == '+')
 		{
 			ins_line_num = hk.ins_line[0] + ins_offset;
 			hk.insertion_lines.push_back(ins_line_num);
 			ins_offset++;
+                        ins_size++;
 		}
 		else
 		{
@@ -191,6 +195,10 @@ void patch::hk_gen_line_num(hunk &hk)
 		}
 
 	}
+        if (del_size == 0)
+            hk.deletion_lines.push_back(0);
+        else if (ins_size == 0)
+            hk.insertion_lines.push_back(0);
 }
 
 void patch::hk_show_changed_lines(hunk hk)

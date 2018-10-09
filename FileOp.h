@@ -22,13 +22,32 @@ public:
     FileOp() = default;
     FileOp(string fp) : c_patch_file_path(fp){}
     void read_file(void);
-    void read_hunk(string hunk_file, string patch_file_name);	
+    void read_hunk(string hunk_file, string patch_file_name);
+    string get_file_name(string a, string b);	
     string o_patch_file_path;
 
 private:
     string c_patch_file_path;
-	patch pt;
+    patch pt;
 };
+
+string FileOp::get_file_name(string a, string b) {
+    if (a.size() > b.size())
+        swap(a, b);
+    string str_m;//store the longest common string
+    for (int i = 0; i < a.size(); i++)
+    {
+        for (int j = i; j < a.size(); j++)
+        {
+            string temp = a.substr(i, j - i + 1);
+            if (b.find(temp) == string::npos)
+                continue;
+            else if (str_m.size() < temp.size())
+                str_m = temp;
+        }
+    }
+    return str_m;
+}
 
 void FileOp::read_hunk(string hunk_file, string patch_file_name)
 {
@@ -42,19 +61,19 @@ void FileOp::read_hunk(string hunk_file, string patch_file_name)
     pt.currenthk = currenthk;
     while(getline(rf,s))
     {
-	if(s.find("@@")!= string::npos)
+	if(s.find("@@")!= string::npos && s.substr(0,2) == "@@")
         {
-		pt.whether_hunk_finish();
-		pt.get_hunk_content(patch_file_name, s);
-		getline(rf,s);
+	    pt.whether_hunk_finish();
+	    pt.get_hunk_content(patch_file_name, s);
+	    getline(rf,s);
         }
 	pt.get_hunk_code(s);
     }
-	pt.hk_show_file_name(pt.currenthk);
-	pt.hk_show_hunk_code(pt.currenthk);
-	pt.hk_gen_line_num(pt.currenthk);
-	pt.hk_show_changed_lines(pt.currenthk);
-	pt.add_hunk_vec();
+    pt.hk_show_file_name(pt.currenthk);
+    pt.hk_show_hunk_code(pt.currenthk);
+    pt.hk_gen_line_num(pt.currenthk);
+    pt.hk_show_changed_lines(pt.currenthk);
+    pt.add_hunk_vec();
 
 }
 
@@ -67,40 +86,25 @@ void FileOp::read_file(void)
     string s;
     std::stringstream ss;
     string file_name;
-    char useless;
+    string useless;
     int modilines;
     string modistatus;
+    string old_version;
+    string new_version;
 
     while(getline(rf,s))
     {
-        if(s == "---")
+        if (s.find("diff --git") != string::npos)
         {
-            getline(rf,s);
-            for(;s != "";getline(rf,s))
-            {
-                string::size_type idx = s.find("file changed");
-                string::size_type idx1 = s.find("files changed");
-                if(idx != string::npos || idx1 != string::npos)
-                {
-                    s.erase(0, s.find_first_not_of(" "));
-                    pt.hd_get_modiinfo(s);
-                }
-                else
-                {
-                    ss.clear();
-                    ss.str(s);
-                    ss >> file_name;
-                    ss >> useless;
-                    ss >> modilines;
-                    ss >> modistatus;
+            ss.clear();
+            ss.str(s);
+            ss >> useless;
+            ss >> useless;
+            ss >> old_version;
+            ss >> new_version;
+            file_name = get_file_name(old_version, new_version);
 
-                    pt.hd_get_file_name(file_name);
-                    pt.hd_get_modilines(modilines);
-                    pt.hd_get_modistatus(modistatus);
-
-                }
-            }
-
+            pt.hd_get_file_name(file_name);
         }
         
     }
